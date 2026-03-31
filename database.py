@@ -1,6 +1,4 @@
 import sqlite3
-import random
-from datetime import datetime
 
 class Database:
     def __init__(self, db_path="vocab.db"):
@@ -22,7 +20,6 @@ class Database:
                     examples TEXT,
                     user_sentence TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_quizzed TIMESTAMP,
                     UNIQUE(user_id, word)
                 )
             """)
@@ -61,25 +58,3 @@ class Database:
             """, (user_id, word.lower()))
             conn.commit()
             return cursor.rowcount > 0
-
-    def get_quiz_words(self, user_id):
-        """Get words for quiz, prioritizing least recently quizzed"""
-        with self.get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT word, definition FROM vocab 
-                WHERE user_id = ?
-                ORDER BY last_quizzed ASC NULLS FIRST
-                LIMIT 10
-            """, (user_id,))
-            words = cursor.fetchall()
-            if words:
-                random.shuffle(words)
-            return words
-
-    def update_last_quizzed(self, user_id, word):
-        with self.get_connection() as conn:
-            conn.execute("""
-                UPDATE vocab SET last_quizzed = CURRENT_TIMESTAMP
-                WHERE user_id = ? AND word = ?
-            """, (user_id, word.lower()))
-            conn.commit()
